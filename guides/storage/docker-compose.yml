@@ -1,0 +1,28 @@
+services:
+
+  rustfs:
+    image: rustfs/rustfs:1.0.0-beta.8
+    mem_limit: 256m
+    ports:
+      - "9000:9000" # S3 API port
+      - "9001:9001" # Console port
+    environment:
+      RUSTFS_ACCESS_KEY: rustfsadmin
+      RUSTFS_SECRET_KEY: rustfsadmin
+      RUSTFS_VOLUMES: /data
+      RUSTFS_ADDRESS: ":9000"
+      RUSTFS_CONSOLE_ENABLE: "true"
+      RUSTFS_CONSOLE_ADDRESS: ":9001"
+    healthcheck:
+      test: ["CMD-SHELL", "curl --fail http://127.0.0.1:9000/health && curl --fail http://127.0.0.1:9001/rustfs/console/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+networks:
+  # Pinned explicitly (not left to the compose-project-name default) so every
+  # other stack (trino, catalog, airflow, amazon/shopify/flipkart-api) can keep
+  # joining this exact network by name regardless of what this folder is called.
+  default:
+    name: rustfs_default

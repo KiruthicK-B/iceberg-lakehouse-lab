@@ -1,0 +1,23 @@
+version: 2
+
+sources:
+  - name: bronze_amazon
+    schema: bronze_amazon
+    tables:
+      - name: amazon_users_raw
+      - name: amazon_items_raw
+      - name: amazon_orders_raw
+
+  - name: bronze_shopify
+    schema: bronze_shopify
+    tables:
+      - name: shopify_users_raw
+      - name: shopify_items_raw
+      - name: shopify_orders_raw
+
+  - name: bronze_flipkart
+    schema: bronze_flipkart
+    tables:
+      - name: flipkart_users_raw
+      - name: flipkart_items_raw
+      - name: flipkart_orders_raw

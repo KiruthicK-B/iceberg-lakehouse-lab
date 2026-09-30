@@ -1,0 +1,37 @@
+name: 'ecommerce'
+version: '1.0.0'
+config-version: 2
+profile: 'ecommerce'
+
+model-paths: ["models"]
+macro-paths: ["macros"]
+
+# Three fully independent per-platform pipelines -- no cross-platform
+# merging anywhere. Each platform gets its own staging/intermediate/marts
+# schemas, using that platform's own native field names throughout.
+models:
+  ecommerce:
+    staging:
+      +materialized: table
+      amazon:
+        +schema: silver_amazon
+      shopify:
+        +schema: silver_shopify
+      flipkart:
+        +schema: silver_flipkart
+    intermediate:
+      +materialized: table
+      amazon:
+        +schema: silver_amazon_enterprise
+      shopify:
+        +schema: silver_shopify_enterprise
+      flipkart:
+        +schema: silver_flipkart_enterprise
+    marts:
+      +materialized: table
+      amazon:
+        +schema: gold_amazon
+      shopify:
+        +schema: gold_shopify
+      flipkart:
+        +schema: gold_flipkart

@@ -1,0 +1,33 @@
+server {
+  listen 8081;
+  # Docker's embedded DNS (127.0.0.11) -- resolving via a variable below
+  # forces nginx to look up the Databricks hostname at request time instead
+  # of once at config-parse time (parse-time resolution can race the
+  # embedded resolver not being ready yet right after container start).
+  resolver 127.0.0.11 valid=30s;
+
+  location / {
+    set $databricks_upstream "https://${DATABRICKS_HOST}";
+    if ($request_method = OPTIONS) {
+      add_header 'Access-Control-Allow-Origin' '*' always;
+      add_header 'Access-Control-Allow-Methods' 'GET, POST, OPTIONS' always;
+      add_header 'Access-Control-Allow-Headers' 'Content-Type' always;
+      add_header 'Access-Control-Max-Age' 1728000 always;
+      add_header 'Content-Length' 0;
+      add_header 'Content-Type' 'text/plain; charset=utf-8';
+      return 204;
+    }
+
+    add_header 'Access-Control-Allow-Origin' '*' always;
+    add_header 'Access-Control-Allow-Methods' 'GET, POST, OPTIONS' always;
+    add_header 'Access-Control-Allow-Headers' 'Content-Type' always;
+
+    # The real Databricks token is injected here, server-side, at container
+    # startup (envsubst on this template) -- dashboard.html's JS never sees
+    # it, only ever talks to this local proxy with no auth of its own.
+    proxy_set_header Authorization "Bearer ${DATABRICKS_TOKEN}";
+    proxy_set_header Content-Type "application/json";
+    proxy_ssl_server_name on;
+    proxy_pass $databricks_upstream;
+  }
+}

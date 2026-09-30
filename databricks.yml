@@ -1,0 +1,35 @@
+# Databricks Asset Bundle for the ecommerce lakehouse's dbt-only layers
+# (Silver / Enterprise Silver / Gold, x3 platforms -- 9 Jobs total).
+#
+# Bronze ingestion deliberately stays on Airflow: the mock APIs and RustFS it
+# depends on are Docker-internal hostnames with no network path from
+# Databricks-hosted compute. These 9 Jobs pick up automatically the moment
+# Airflow's Bronze DAGs write real rows into bronze_<platform>.* -- table
+# update triggers watch the actual Unity Catalog tables, not who wrote them.
+bundle:
+  name: ecommerce-lakehouse
+
+variables:
+  catalog:
+    description: Unity Catalog catalog these Jobs read from and write to.
+    default: ecommerce_dev
+  warehouse_id:
+    description: SQL Warehouse used to run every dbt_task.
+    default: 0a58c060bf91eeff
+
+include:
+  - resources/*.job.yml
+
+targets:
+  dev:
+    mode: development
+    default: true
+    variables:
+      catalog: ecommerce_dev
+
+  prod:
+    mode: production
+    variables:
+      catalog: ecommerce
+    workspace:
+      root_path: /Workspace/Users/reach2kiruthick.b@gmail.com/.bundle/${bundle.name}/${bundle.target}

@@ -1,0 +1,17 @@
+services:
+
+  # CORS proxy for dashboard.html -> Databricks SQL Statement Execution API.
+  # Injects the real Authorization header server-side (from DATABRICKS_TOKEN
+  # below) -- dashboard.html's browser-side JS never sees the real token,
+  # only ever talks to this local, unauthenticated proxy. Every other byte
+  # passes straight through to the real Databricks workspace untouched.
+  dashboard-proxy:
+    image: nginx:alpine
+    mem_limit: 64m
+    ports:
+      - "8081:8081"
+    environment:
+      DATABRICKS_HOST: ${DATABRICKS_HOST:?set DATABRICKS_HOST before starting}
+      DATABRICKS_TOKEN: ${DATABRICKS_TOKEN:?set DATABRICKS_TOKEN before starting}
+    volumes:
+      - ./default.conf.template:/etc/nginx/templates/default.conf.template:ro

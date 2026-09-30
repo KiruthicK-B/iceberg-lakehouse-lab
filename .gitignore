@@ -1,0 +1,9 @@
+.env
+*.env
+!*.env.example
+
+__pycache__/
+*.pyc
+.databricks/
+.databrickscfg
+.DS_Store

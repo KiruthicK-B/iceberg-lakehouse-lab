@@ -1,0 +1,35 @@
+resources:
+  jobs:
+    amazon_silver:
+      name: amazon_silver
+      tags:
+        project: ecommerce
+        platform: amazon
+        layer: silver
+        direction: downstream
+      trigger:
+        pause_status: UNPAUSED
+        table_update:
+          table_names:
+            - ${var.catalog}.bronze_amazon.amazon_users_raw
+            - ${var.catalog}.bronze_amazon.amazon_items_raw
+            - ${var.catalog}.bronze_amazon.amazon_orders_raw
+          condition: ANY_UPDATED
+          wait_after_last_change_seconds: 60
+      tasks:
+        - task_key: dbt_staging
+          environment_key: dbt_env
+          dbt_task:
+            commands:
+              - "dbt run --select path:models/staging/amazon"
+            project_directory: ../guides/dbt/ecommerce
+            warehouse_id: ${var.warehouse_id}
+            catalog: ${var.catalog}
+            schema: default
+            source: WORKSPACE
+      environments:
+        - environment_key: dbt_env
+          spec:
+            client: "2"
+            dependencies:
+              - "dbt-databricks~=1.9.0"

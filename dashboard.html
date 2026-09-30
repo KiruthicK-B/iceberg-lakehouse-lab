@@ -1,0 +1,397 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Enterprise Gold Dashboard</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<style>
+  .viz-root {
+    color-scheme: light;
+    --surface-1:      #fcfcfb;
+    --page:           #f9f9f7;
+    --text-primary:   #0b0b0b;
+    --text-secondary: #52514e;
+    --text-muted:     #898781;
+    --gridline:       #e1e0d9;
+    --baseline:       #c3c2b7;
+    --border:         rgba(11,11,11,0.10);
+    --series-1:       #2a78d6;
+    --status-good:     #0ca30c;
+    --status-warning:  #fab219;
+    --status-serious:  #ec835a;
+    --status-critical: #d03b3b;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:where(:not([data-theme="light"])) .viz-root {
+      color-scheme: dark;
+      --surface-1:      #1a1a19;
+      --page:           #0d0d0d;
+      --text-primary:   #ffffff;
+      --text-secondary: #c3c2b7;
+      --text-muted:     #898781;
+      --gridline:       #2c2c2a;
+      --baseline:       #383835;
+      --border:         rgba(255,255,255,0.10);
+      --series-1:       #3987e5;
+      --status-good:     #0ca30c;
+      --status-warning:  #fab219;
+      --status-serious:  #ec835a;
+      --status-critical: #d03b3b;
+    }
+  }
+  :root[data-theme="dark"] .viz-root {
+    color-scheme: dark;
+    --surface-1:      #1a1a19;
+    --page:           #0d0d0d;
+    --text-primary:   #ffffff;
+    --text-secondary: #c3c2b7;
+    --text-muted:     #898781;
+    --gridline:       #2c2c2a;
+    --baseline:       #383835;
+    --border:         rgba(255,255,255,0.10);
+    --series-1:       #3987e5;
+    --status-good:     #0ca30c;
+    --status-warning:  #fab219;
+    --status-serious:  #ec835a;
+    --status-critical: #d03b3b;
+  }
+
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; }
+  body {
+    font-family: system-ui, -apple-system, "Segoe UI", sans-serif;
+    background: var(--page);
+    color: var(--text-primary);
+  }
+  .viz-root { max-width: 1100px; margin: 0 auto; padding: 24px 20px 60px; }
+
+  h1 { font-size: 20px; margin: 0 0 4px; }
+  .subtitle { color: var(--text-secondary); font-size: 14px; margin: 0 0 6px; }
+  .conn-note { color: var(--text-muted); font-size: 12px; margin: 0 0 24px; }
+  .conn-note code { font-size: 11px; }
+
+  .controls {
+    display: flex; flex-wrap: wrap; gap: 10px; align-items: center;
+    background: var(--surface-1); border: 1px solid var(--border);
+    border-radius: 10px; padding: 12px 14px; margin-bottom: 18px;
+  }
+  .controls label { font-size: 12px; color: var(--text-secondary); display: block; margin-bottom: 3px; }
+  .controls select, .controls input {
+    font: inherit; font-size: 14px; padding: 7px 9px;
+    border: 1px solid var(--border); border-radius: 7px;
+    background: var(--page); color: var(--text-primary);
+    min-width: 140px;
+  }
+  .controls .field { display: flex; flex-direction: column; }
+  .controls .search { flex: 1; min-width: 160px; }
+  .controls .search input { width: 100%; min-width: 0; }
+
+  .tiles { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 10px; margin-bottom: 18px; }
+  .tile {
+    background: var(--surface-1); border: 1px solid var(--border);
+    border-radius: 10px; padding: 14px 16px;
+  }
+  .tile .label { font-size: 12px; color: var(--text-muted); margin-bottom: 4px; }
+  .tile .value {
+    font-size: 24px; font-weight: 600; color: var(--series-1);
+    font-variant-numeric: tabular-nums;
+  }
+
+  table { width: 100%; border-collapse: collapse; background: var(--surface-1); border: 1px solid var(--border); border-radius: 10px; overflow: hidden; }
+  thead th {
+    text-align: left; font-size: 11px; text-transform: uppercase; letter-spacing: 0.03em;
+    color: var(--text-muted); padding: 10px 12px; border-bottom: 1px solid var(--gridline);
+    background: var(--page); position: sticky; top: 0;
+  }
+  tbody td {
+    padding: 9px 12px; font-size: 13.5px; border-bottom: 1px solid var(--gridline);
+    font-variant-numeric: tabular-nums; color: var(--text-primary);
+  }
+  tbody tr:last-child td { border-bottom: none; }
+  tbody tr:hover { background: var(--page); }
+
+  .table-wrap { max-height: 560px; overflow: auto; border-radius: 10px; }
+
+  .badge {
+    display: inline-flex; align-items: center; gap: 5px;
+    font-size: 12px; padding: 2px 8px; border-radius: 999px;
+    border: 1px solid currentColor;
+  }
+  .badge.good     { color: var(--status-good); }
+  .badge.warning  { color: var(--status-warning); }
+  .badge.serious  { color: var(--status-serious); }
+  .badge.critical { color: var(--status-critical); }
+  .badge .dot { width: 6px; height: 6px; border-radius: 50%; background: currentColor; }
+
+  .empty { padding: 30px; text-align: center; color: var(--text-muted); }
+  .empty.error { color: var(--status-critical); }
+  .rowcount { font-size: 12px; color: var(--text-muted); margin: 8px 0 6px; }
+</style>
+</head>
+<body>
+<div class="viz-root">
+  <h1>Enterprise Gold Dashboard</h1>
+  <p class="subtitle">3 independent e-commerce platforms, each with their own native Gold schema — no cross-platform merging.</p>
+  <p class="conn-note">Live query against Databricks via <code>http://localhost:8081</code> (CORS proxy that injects the real auth token server-side — this page never holds it) — no embedded/cached data.</p>
+
+  <div class="controls">
+    <div class="field">
+      <label for="platform">Ecommerce</label>
+      <select id="platform">
+        <option value="amazon">Amazon</option>
+        <option value="shopify">Shopify</option>
+        <option value="flipkart">Flipkart</option>
+      </select>
+    </div>
+    <div class="field">
+      <label for="entity">Gold table</label>
+      <select id="entity">
+        <option value="orders">Orders</option>
+        <option value="users">Users</option>
+        <option value="items">Items</option>
+      </select>
+    </div>
+    <div class="field">
+      <label for="filterCol">Filter</label>
+      <select id="filterCol"></select>
+    </div>
+    <div class="field search">
+      <label for="search">Search</label>
+      <input id="search" type="text" placeholder="Search all columns…">
+    </div>
+  </div>
+
+  <div class="tiles" id="tiles"></div>
+
+  <div class="rowcount" id="rowcount"></div>
+  <div class="table-wrap">
+    <table>
+      <thead><tr id="thead-row"></tr></thead>
+      <tbody id="tbody"></tbody>
+    </table>
+  </div>
+</div>
+
+<script>
+(function () {
+  // Databricks SQL Statement Execution API, reached through a CORS proxy
+  // (guides/dashboard-proxy/) sitting in front of the real workspace. The
+  // proxy injects the real Authorization: Bearer <token> header server-side
+  // -- this page's JS never sees the real Databricks token, only ever talks
+  // to the local, unauthenticated proxy. Every other byte passes straight
+  // through to the real Databricks SQL Statement Execution API untouched.
+  const DATABRICKS_URL = 'http://localhost:8081';
+  const WAREHOUSE_ID = '0a58c060bf91eeff';
+
+  const SCHEMA = { amazon: 'ecommerce.gold_amazon', shopify: 'ecommerce.gold_shopify', flipkart: 'ecommerce.gold_flipkart' };
+  const TABLE = {
+    amazon:   { users: 'dim_amazon_users',   items: 'dim_amazon_items',   orders: 'fact_amazon_orders' },
+    shopify:  { users: 'dim_shopify_users',  items: 'dim_shopify_items',  orders: 'fact_shopify_orders' },
+    flipkart: { users: 'dim_flipkart_users', items: 'dim_flipkart_items', orders: 'fact_flipkart_orders' },
+  };
+
+  // Per-platform, per-entity: which column drives the "Filter" dropdown,
+  // and (for orders) which column holds the revenue figure + its currency.
+  const FILTER_COL = {
+    amazon:   { users: 'country',      items: 'category',     orders: 'order_status' },
+    shopify:  { users: 'country_code', items: 'product_type', orders: 'financial_status' },
+    flipkart: { users: 'state',        items: 'category',     orders: 'status' },
+  };
+  const REVENUE = {
+    amazon:   { col: 'amount_usd', symbol: '$' },
+    shopify:  { col: 'amount_usd', symbol: '$' },
+    flipkart: { col: 'amount_inr', symbol: '₹' },
+  };
+
+  const STATUS_ROLE = {
+    delivered: 'good', paid: 'good',
+    shipped: 'serious', confirmed: 'serious',
+    pending: 'warning',
+    cancelled: 'critical', refunded: 'critical', voided: 'critical', returned: 'critical',
+  };
+
+  const platformSel = document.getElementById('platform');
+  const entitySel = document.getElementById('entity');
+  const filterSel = document.getElementById('filterCol');
+  const searchInput = document.getElementById('search');
+  const tilesEl = document.getElementById('tiles');
+  const theadRow = document.getElementById('thead-row');
+  const tbody = document.getElementById('tbody');
+  const rowcountEl = document.getElementById('rowcount');
+
+  // platform:entity -> rows[], fetched from Databricks once and reused until
+  // the platform/entity dropdowns change again (filter/search stay client-side).
+  const cache = {};
+  let loadToken = 0;
+
+  async function databricksFetch(url, options) {
+    const res = await fetch(url, options);
+    if (!res.ok) throw new Error(`Databricks HTTP ${res.status}`);
+    return res.json();
+  }
+
+  async function runQuery(sql) {
+    let json = await databricksFetch(`${DATABRICKS_URL}/api/2.0/sql/statements`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        statement: sql,
+        warehouse_id: WAREHOUSE_ID,
+        wait_timeout: '30s',
+        disposition: 'INLINE',
+      }),
+    });
+
+    // Poll if the warehouse hadn't finished within the synchronous wait_timeout window.
+    while (json.status.state === 'PENDING' || json.status.state === 'RUNNING') {
+      await new Promise(r => setTimeout(r, 500));
+      json = await databricksFetch(`${DATABRICKS_URL}/api/2.0/sql/statements/${json.statement_id}`);
+    }
+    if (json.status.state !== 'SUCCEEDED') {
+      throw new Error(json.status.error?.message || `Databricks query ${json.status.state}`);
+    }
+
+    const columns = json.manifest.schema.columns.map(c => c.name);
+    const rows = [...(json.result?.data_array || [])];
+
+    // Almost never triggered at this lab's data volumes (single chunk), but
+    // handle a multi-chunk result correctly rather than silently truncating.
+    for (let i = 1; i < json.manifest.total_chunk_count; i++) {
+      const chunk = await databricksFetch(
+        `${DATABRICKS_URL}/api/2.0/sql/statements/${json.statement_id}/result/chunks/${i}`
+      );
+      rows.push(...chunk.data_array);
+    }
+
+    return rows.map(r => Object.fromEntries(columns.map((c, i) => [c, r[i]])));
+  }
+
+  async function fetchRows(platform, entity) {
+    const key = `${platform}:${entity}`;
+    if (cache[key]) return cache[key];
+    const sql = `SELECT * FROM ${SCHEMA[platform]}.${TABLE[platform][entity]}`;
+    const rows = await runQuery(sql);
+    cache[key] = rows;
+    return rows;
+  }
+
+  function statusBadge(value) {
+    const role = STATUS_ROLE[String(value).toLowerCase()];
+    if (!role) return escapeHtml(value);
+    return `<span class="badge ${role}"><span class="dot"></span>${escapeHtml(value)}</span>`;
+  }
+
+  function escapeHtml(v) {
+    return String(v).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+  }
+
+  function showLoading() {
+    theadRow.innerHTML = '';
+    tbody.innerHTML = '<tr><td class="empty">Loading from Databricks…</td></tr>';
+    tilesEl.innerHTML = '';
+    rowcountEl.textContent = '';
+  }
+
+  function showError(err) {
+    theadRow.innerHTML = '';
+    tbody.innerHTML = `<tr><td class="empty error">Query failed: ${escapeHtml(err.message || err)}</td></tr>`;
+    tilesEl.innerHTML = '';
+    rowcountEl.textContent = '';
+  }
+
+  function populateFilterOptions(rows) {
+    const platform = platformSel.value, entity = entitySel.value;
+    const col = FILTER_COL[platform][entity];
+    const values = Array.from(new Set(rows.map(r => r[col]))).sort();
+    filterSel.innerHTML = '<option value="">All</option>' +
+      values.map(v => `<option value="${escapeHtml(v)}">${escapeHtml(v)}</option>`).join('');
+    filterSel.dataset.col = col;
+  }
+
+  function renderTiles(rows) {
+    const platform = platformSel.value, entity = entitySel.value;
+    const tiles = [{ label: 'Rows shown', value: rows.length.toLocaleString() }];
+
+    if (entity === 'orders') {
+      const rev = REVENUE[platform];
+      const total = rows.reduce((s, r) => s + (Number(r[rev.col]) || 0), 0);
+      tiles.push({ label: 'Total revenue', value: rev.symbol + total.toLocaleString(undefined, {maximumFractionDigits: 0}) });
+      const statusCol = FILTER_COL[platform].orders;
+      tiles.push({ label: 'Distinct statuses', value: new Set(rows.map(r => r[statusCol])).size });
+    } else {
+      const col = FILTER_COL[platform][entity];
+      tiles.push({ label: entity === 'users' ? 'Distinct regions' : 'Distinct categories', value: new Set(rows.map(r => r[col])).size });
+    }
+
+    tilesEl.innerHTML = tiles.map(t => `
+      <div class="tile"><div class="label">${t.label}</div><div class="value">${t.value}</div></div>
+    `).join('');
+  }
+
+  function renderTable(allRows) {
+    const platform = platformSel.value, entity = entitySel.value;
+    const statusCol = entity === 'orders' ? FILTER_COL[platform].orders : null;
+    const filterVal = filterSel.value;
+    const filterCol = filterSel.dataset.col;
+    const q = searchInput.value.trim().toLowerCase();
+
+    let rows = allRows;
+    if (filterVal) rows = rows.filter(r => String(r[filterCol]) === filterVal);
+    if (q) rows = rows.filter(r => Object.values(r).some(v => String(v).toLowerCase().includes(q)));
+
+    renderTiles(rows);
+    rowcountEl.textContent = `${rows.length.toLocaleString()} of ${allRows.length.toLocaleString()} rows`;
+
+    if (rows.length === 0) {
+      theadRow.innerHTML = '';
+      tbody.innerHTML = '<tr><td class="empty">No matching rows</td></tr>';
+      return;
+    }
+
+    const cols = Object.keys(rows[0]);
+    theadRow.innerHTML = cols.map(c => `<th>${escapeHtml(c)}</th>`).join('');
+
+    const MAX_RENDER = 500;
+    const shown = rows.slice(0, MAX_RENDER);
+    tbody.innerHTML = shown.map(r => '<tr>' + cols.map(c => {
+      if (c === statusCol) return `<td>${statusBadge(r[c])}</td>`;
+      return `<td>${escapeHtml(r[c])}</td>`;
+    }).join('') + '</tr>').join('');
+
+    if (rows.length > MAX_RENDER) {
+      tbody.innerHTML += `<tr><td colspan="${cols.length}" class="empty">…and ${rows.length - MAX_RENDER} more rows (refine filter/search)</td></tr>`;
+    }
+  }
+
+  async function onPlatformOrEntityChange() {
+    const platform = platformSel.value, entity = entitySel.value;
+    const token = ++loadToken;
+    showLoading();
+    let rows;
+    try {
+      rows = await fetchRows(platform, entity);
+    } catch (err) {
+      if (token === loadToken) showError(err);
+      return;
+    }
+    if (token !== loadToken) return; // a newer selection change superseded this fetch
+    populateFilterOptions(rows);
+    renderTable(rows);
+  }
+
+  function onFilterOrSearchChange() {
+    const platform = platformSel.value, entity = entitySel.value;
+    const key = `${platform}:${entity}`;
+    if (cache[key]) renderTable(cache[key]);
+  }
+
+  platformSel.addEventListener('change', onPlatformOrEntityChange);
+  entitySel.addEventListener('change', onPlatformOrEntityChange);
+  filterSel.addEventListener('change', onFilterOrSearchChange);
+  searchInput.addEventListener('input', onFilterOrSearchChange);
+
+  onPlatformOrEntityChange();
+})();
+</script>
+</body>
+</html>
