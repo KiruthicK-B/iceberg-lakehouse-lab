@@ -20,6 +20,24 @@ variables:
 include:
   - resources/*.job.yml
 
+# Only the dbt project is actually needed on Databricks (every job's
+# project_directory points into it) -- everything else in this repo (Airflow
+# DAGs, the mock-API/docker-compose infra, dashboard.html, docs, images) is
+# local-only tooling with nothing to do once inside the workspace.
+sync:
+  exclude:
+    - guides/airflow/**
+    - guides/amazon-api/**
+    - guides/shopify-api/**
+    - guides/flipkart-api/**
+    - guides/storage/**
+    - guides/dashboard-proxy/**
+    - docs/**
+    - "*.png"
+    - "*.pdf"
+    - dashboard.html
+    - README.md
+
 targets:
   dev:
     mode: development
